@@ -22,7 +22,7 @@
  * Thread-Safety: Call connectCoreLogger() once from the main thread
  * before creating any wasapi objects.
  *
- * License: MIT
+ * License: Public Domain (Unlicense)
  ***************************************************************************/
 
 #include <wasapi/logger.h>

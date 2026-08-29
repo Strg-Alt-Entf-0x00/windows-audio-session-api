@@ -10,7 +10,7 @@
  * Maps to wasapi::internal::log() which checks the registered callback.
  * Zero overhead when no callback is registered (atomic check).
  *
- * License: MIT
+ * License: Public Domain (Unlicense)
  ***************************************************************************/
 
 #include <wasapi/logger.h>

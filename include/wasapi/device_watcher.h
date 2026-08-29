@@ -34,7 +34,7 @@
  *   The callback is invoked from a Windows COM notification thread.
  *   The callback MUST be thread-safe and MUST NOT block.
  *
- * License: MIT
+ * License: Public Domain (Unlicense)
  * Author: Strg-Alt-Entf-0x00
  * Date: 2026-06-19
  ***************************************************************************/

@@ -6,7 +6,7 @@
  * 
  * Ensures proper COM initialization/cleanup on each thread
  * 
- * License: MIT
+ * License: Public Domain (Unlicense)
  * Author: Strg-Alt-Entf-0x00
  * Date: 2026-06-08
  ***************************************************************************/

@@ -17,7 +17,7 @@
  *   message. The callback MUST be thread-safe.
  *   The callback is NEVER called from the real-time audio thread.
  *
- * License: MIT
+ * License: Public Domain (Unlicense)
  * Author: Strg-Alt-Entf-0x00
  ***************************************************************************/
 

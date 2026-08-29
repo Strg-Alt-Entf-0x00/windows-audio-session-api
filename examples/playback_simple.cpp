@@ -6,7 +6,7 @@
  * - Audio callback
  * - Low-latency playback
  * 
- * License: MIT
+ * License: Public Domain (Unlicense)
  ***************************************************************************/
 
 #include <wasapi/device.h>

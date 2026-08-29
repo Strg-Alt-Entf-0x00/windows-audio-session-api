@@ -7,7 +7,7 @@
  * COM callbacks are forwarded directly to the user callback.
  * Thread-Safety: User callback invoked from COM notification thread.
  *
- * License: MIT
+ * License: Public Domain (Unlicense)
  * Author: Strg-Alt-Entf-0x00
  * Date: 2026-06-19
  ***************************************************************************/

@@ -15,7 +15,7 @@
  * - Session lifecycle events (IAudioSessionEvents)
  * - Stream position (IAudioClock)
  *
- * License: MIT
+ * License: Public Domain (Unlicense)
  * Author: Strg-Alt-Entf-0x00
  * Date: 2026-06-08
  * Updated: 2026-06-19 (v2.0.0)

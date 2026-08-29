@@ -6,6 +6,9 @@ out/
 # Log files
 logs/
 
+# Internal docs / session notes
+.docs/
+
 # Backup files
 tools/backup/backups/
 

@@ -3,7 +3,7 @@
  * 
  * Lists all available audio devices
  * 
- * License: MIT
+ * License: Public Domain (Unlicense)
  ***************************************************************************/
 
 #include <wasapi/device_enumerator.h>
