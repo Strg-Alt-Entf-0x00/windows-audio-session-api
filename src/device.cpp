@@ -493,7 +493,8 @@ struct Device::Impl {
             DWORD result = WaitForSingleObject(audioEvent_, 100);
 
             if (result == WAIT_TIMEOUT) {
-                underrunCount_.fetch_add(1, std::memory_order_relaxed);
+                // Timeout on capture is normal (silence / no input).
+                // Unlike playback, this is NOT an underrun.
                 continue;
             }
             if (result != WAIT_OBJECT_0 || shouldStop_.load(std::memory_order_acquire)) {

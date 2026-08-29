@@ -110,8 +110,8 @@ public:
     /**
      * @brief Refresh device list
      * 
-     * Clears internal cache and forces re-enumeration.
-     * Call this after device hot-plug events.
+     * Currently a no-op: each enumeration call queries the system directly
+     * and always returns fresh results. Provided for API consistency.
      */
     void refresh();
 

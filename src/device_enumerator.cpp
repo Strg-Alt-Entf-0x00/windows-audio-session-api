@@ -183,10 +183,24 @@ DeviceInfo DeviceEnumerator::getDeviceById(const std::wstring& deviceId) {
         throw WasapiException(ErrorCode::DeviceNotFound, "Device is not active");
     }
     
+    // Determine actual device type via IMMEndpoint
+    DeviceType resolvedType = DeviceType::Playback;  // Fallback
+    ComPtr<IMMEndpoint> endpoint;
+    hr = device->QueryInterface(IID_PPV_ARGS(&endpoint));
+    if (SUCCEEDED(hr)) {
+        EDataFlow dataFlow = eRender;
+        hr = endpoint->GetDataFlow(&dataFlow);
+        if (SUCCEEDED(hr)) {
+            resolvedType = (dataFlow == eCapture)
+                ? DeviceType::Capture
+                : DeviceType::Playback;
+        }
+    }
+
     DeviceInfo info;
     info.id = deviceId;
     info.name = Impl::getDeviceName(device.Get());
-    info.type = DeviceType::Playback;  // Type unknown from ID alone
+    info.type = resolvedType;
     info.isDefault = false;
     
     return info;
