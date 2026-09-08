@@ -9,14 +9,14 @@ WASAPI (Windows Audio Session API) implementation for audio applications. Built 
 
 ## Features
 
-- 🎵 **IAudioClient3** - Low-latency shared and exclusive modes
-- ⚡ **Event-Driven Architecture** - Zero CPU polling, pure event-driven callbacks
-- 🎯 **MMCSS Integration** - "Pro Audio" thread priority for real-time performance
-- 🔌 **Hot-Plug Support** - Automatic device monitoring with IMMNotificationClient
-- 📊 **Audio Sessions** - Full session lifecycle events via IAudioSessionEvents
-- 📈 **Peak Metering** - Per-channel volume monitoring
-- 🔄 **Sample Rate Conversion** - Automatic format conversion (AUTOCONVERTPCM)
-- 🏗️ **Modern C++20** - RAII, PIMPL pattern, concepts, and strong type safety
+- **IAudioClient3** - Low-latency shared and exclusive modes
+- **Event-Driven Architecture** - Zero CPU polling, pure event-driven callbacks
+- **MMCSS Integration** - "Pro Audio" thread priority for real-time performance
+- **Hot-Plug Support** - Automatic device monitoring with IMMNotificationClient
+- **Audio Sessions** - Full session lifecycle events via IAudioSessionEvents
+- **Peak Metering** - Per-channel volume monitoring
+- **Sample Rate Conversion** - Automatic format conversion (AUTOCONVERTPCM)
+- **Modern C++20** - RAII, PIMPL pattern, concepts, and strong type safety
 
 ## Requirements
 
