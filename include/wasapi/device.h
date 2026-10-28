@@ -178,6 +178,9 @@ public:
     /// Returns the device metadata (id, name, type, isDefault).
     [[nodiscard]] DeviceInfo deviceInfo() const;
 
+    /// Returns the format negotiated for the audio endpoint.
+    [[nodiscard]] NegotiatedAudioFormat negotiatedAudioFormat() const noexcept;
+
     /// Returns the effective configuration (may differ from requested due to format negotiation).
     [[nodiscard]] const DeviceConfig& config() const noexcept;
 

@@ -11,6 +11,7 @@
 #include "format_converter.h"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace wasapi {
 namespace internal {
@@ -68,7 +69,7 @@ void AudioFormatConverter::float32ToInt24(const float* src, int32_t* dst, size_t
         value = std::clamp(value, -8388608, 8388607);
         
         // Left-justify: shift left by 8 bits
-        dst[i] = value << 8;
+        dst[i] = value * 256;
     }
 }
 
@@ -84,11 +85,15 @@ void AudioFormatConverter::float32ToInt32(const float* src, int32_t* dst, size_t
         float clamped = clamp(src[i]);
         double scaled = static_cast<double>(clamped) * kInt32Scale;  // Use double for precision
         
-        // Round to nearest integer
-        dst[i] = static_cast<int32_t>(std::round(scaled));
+        if (scaled <= static_cast<double>(std::numeric_limits<int32_t>::min())) {
+            dst[i] = std::numeric_limits<int32_t>::min();
+        } else if (scaled >= static_cast<double>(std::numeric_limits<int32_t>::max())) {
+            dst[i] = std::numeric_limits<int32_t>::max();
+        } else {
+            dst[i] = static_cast<int32_t>(std::round(scaled));
+        }
     }
 }
 
 } // namespace internal
 } // namespace wasapi
-

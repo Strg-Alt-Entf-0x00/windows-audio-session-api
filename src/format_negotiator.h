@@ -7,12 +7,8 @@
  * Intelligent audio format negotiation with automatic fallback.
  * Inspired by VLC's WASAPI implementation.
  * 
- * Strategy:
- * 1. Try requested format exactly
- * 2. Try Float32 (most widely supported)
- * 3. Try Int16 (universal compatibility)
- * 4. Try system mix format (always works)
- * 5. Enumerate all supported formats
+ * Shared mode retains the requested client format and lets the audio engine
+ * convert it to the endpoint format. Exclusive mode probes supported formats.
  * 
  * Thread-Safety: All functions are thread-safe
  * 
@@ -47,7 +43,7 @@ public:
      */
     struct NegotiationResult {
         WAVEFORMATEXTENSIBLE format;        ///< Negotiated format
-        bool needsConversion;               ///< True if format conversion needed
+        bool needsConversion;               ///< True if negotiated stream differs from request
         AudioFormat requestedFormat;        ///< Originally requested format
         AudioFormat negotiatedFormat;       ///< Actually negotiated format
         uint32_t negotiatedSampleRate;      ///< Actual sample rate
@@ -57,11 +53,8 @@ public:
     /**
      * @brief Negotiate audio format with device
      * 
-     * Tries multiple strategies to find a working format:
-     * 1. Requested format (exact match)
-     * 2. Float32 fallback (most compatible)
-     * 3. Int16 fallback (universal)
-     * 4. System mix format (always supported)
+     * Shared mode returns the requested client format for conversion by the
+     * audio engine. Exclusive mode probes the requested format and fallbacks.
      * 
      * @param audioClient Audio client to negotiate with
      * @param config Desired device configuration
@@ -178,4 +171,3 @@ private:
 
 } // namespace internal
 } // namespace wasapi
-

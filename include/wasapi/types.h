@@ -152,6 +152,21 @@ struct DeviceConfig {
 };
 
 /**
+ * @brief Audio format actually negotiated with the endpoint.
+ *
+ * This describes the client stream format, which can differ from the physical
+ * endpoint format when shared-mode audio conversion is active. Both playback
+ * and capture callbacks use Float32 samples with this structure's sample rate
+ * and channel count.
+ */
+struct NegotiatedAudioFormat {
+    uint32_t sampleRateHz;
+    uint16_t channelCount;
+    AudioFormat format;
+    bool needsConversion; ///< True if the negotiated stream differs from the request.
+};
+
+/**
  * @brief Audio callback function type.
  *
  * Called by the audio engine when:
@@ -160,6 +175,9 @@ struct DeviceConfig {
  *
  * @param buffer     Pointer to audio buffer (interleaved float32 samples)
  * @param frameCount Number of audio frames (samples per channel)
+ *
+ * Both callback directions always use Float32 samples, regardless of the
+ * negotiated stream's integer PCM format.
  *
  * Buffer layout for stereo (2 channels):
  *   buffer[i*2+0] = Left  channel, frame i

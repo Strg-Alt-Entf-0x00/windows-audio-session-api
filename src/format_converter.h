@@ -1,4 +1,6 @@
 #pragma once
+#include <bit>
+#include <cstdint>
 /***************************************************************************
  * WASAPI - Windows Audio Library
  * 
@@ -154,13 +156,14 @@ public:
      */
     static void float32ToInt32(const float* src, int32_t* dst, size_t sampleCount) noexcept;
     
-    /**
-     * @brief Clamp float to [-1.0, 1.0] range
-     * 
-     * @param value Input value
-     * @return Clamped value
-     */
+    /// Clamp finite samples to [-1, 1], map NaN to silence, and clamp infinities.
     [[nodiscard]] static constexpr float clamp(float value) noexcept {
+        const uint32_t bits = std::bit_cast<uint32_t>(value);
+        const uint32_t magnitude = bits & 0x7FFFFFFFU;
+        if (magnitude > 0x7F800000U) return 0.0f;
+        if (magnitude >= 0x3F800000U) {
+            return (bits & 0x80000000U) != 0 ? -1.0f : 1.0f;
+        }
         if (value < -1.0f) return -1.0f;
         if (value > 1.0f) return 1.0f;
         return value;
@@ -179,4 +182,3 @@ private:
 
 } // namespace internal
 } // namespace wasapi
-

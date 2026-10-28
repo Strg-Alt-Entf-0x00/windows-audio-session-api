@@ -16,6 +16,7 @@
 #include <vector>
 #include <chrono>
 #include <cmath>
+#include <limits>
 
 using namespace wasapi::internal;
 
@@ -208,6 +209,38 @@ bool testEdgeCases() {
         std::cout << "  Max Amplitude:  " << (passed ? "✅ PASS" : "❌ FAIL") << std::endl;
         allPassed &= passed;
     }
+
+    // Test 4: Full-scale integer endpoints are saturated without overflow.
+    {
+        float input[] = {-1.0f, 1.0f};
+        int32_t int24[2];
+        int32_t int32[2];
+        AudioFormatConverter::float32ToInt24(input, int24, 2);
+        AudioFormatConverter::float32ToInt32(input, int32, 2);
+
+        const bool passed =
+            int24[0] == -8388608 * 256 && int24[1] == 8388607 * 256 &&
+            int32[0] == std::numeric_limits<int32_t>::min() &&
+            int32[1] == std::numeric_limits<int32_t>::max();
+        std::cout << "  PCM Endpoints:  " << (passed ? "✅ PASS" : "❌ FAIL") << std::endl;
+        allPassed &= passed;
+    }
+
+    // Test 5: Non-finite callback samples are made safe before integer casts.
+    {
+        const float input[] = {
+            std::numeric_limits<float>::quiet_NaN(),
+            std::numeric_limits<float>::infinity(),
+            -std::numeric_limits<float>::infinity()
+        };
+        int16_t output[3]{};
+        AudioFormatConverter::float32ToInt16(input, output, 3);
+
+        const bool passed =
+            output[0] == 0 && output[1] == 32767 && output[2] == -32768;
+        std::cout << "  Non-finite PCM: " << (passed ? "✅ PASS" : "❌ FAIL") << std::endl;
+        allPassed &= passed;
+    }
     
     return allPassed;
 }
@@ -234,4 +267,3 @@ int main() {
     
     return allPassed ? 0 : 1;
 }
-

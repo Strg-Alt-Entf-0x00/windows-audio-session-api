@@ -12,11 +12,11 @@ set VSLANG=1033
 
 REM Create build and logs directories
 if not exist build mkdir build
-if not exist logs mkdir logs
+if not exist .logs mkdir .logs
 
 REM Timestamp for log file (PowerShell, works on Win10/11)
 for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HH-mm-ss"') do set TS=%%i
-set LOG=logs\%TS%_build.log
+set LOG=.logs\%TS%_build.log
 
 cd build
 

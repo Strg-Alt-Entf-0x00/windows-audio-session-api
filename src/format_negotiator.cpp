@@ -23,9 +23,12 @@ FormatNegotiator::NegotiationResult FormatNegotiator::negotiate(
     result.requestedFormat = config.format;
     result.needsConversion = false;
     
-    // Strategy 1: Try requested format exactly
+    // In shared mode, IsFormatSupported only reports formats directly
+    // supported by the endpoint. Initialize() uses AUTOCONVERTPCM and can
+    // accept a client format that the shared audio engine converts.
     WAVEFORMATEXTENSIBLE requestedWaveFormat = createFormat(config);
-    if (tryFormat(audioClient, requestedWaveFormat, shareMode)) {
+    if (shareMode == AUDCLNT_SHAREMODE_SHARED ||
+        tryFormat(audioClient, requestedWaveFormat, shareMode)) {
         result.format = requestedWaveFormat;
         result.negotiatedFormat = config.format;
         result.negotiatedSampleRate = config.sampleRateHz;
@@ -34,7 +37,7 @@ FormatNegotiator::NegotiationResult FormatNegotiator::negotiate(
         return result;
     }
     
-    // Strategy 2: Try Float32 fallback (most compatible)
+    // Exclusive mode has no shared-engine conversion; try supported formats.
     if (config.format != AudioFormat::Float32) {
         WAVEFORMATEXTENSIBLE float32Format = createFloat32Format(
             config.sampleRateHz, 
@@ -51,7 +54,7 @@ FormatNegotiator::NegotiationResult FormatNegotiator::negotiate(
         }
     }
     
-    // Strategy 3: Try Int16 fallback (universal compatibility)
+    // Try Int16 as the final exclusive-mode fallback.
     if (config.format != AudioFormat::Int16) {
         WAVEFORMATEXTENSIBLE int16Format = createInt16Format(
             config.sampleRateHz,
@@ -66,18 +69,6 @@ FormatNegotiator::NegotiationResult FormatNegotiator::negotiate(
             result.needsConversion = true;
             return result;
         }
-    }
-    
-    // Strategy 4: Use system mix format (always works in shared mode)
-    if (shareMode == AUDCLNT_SHAREMODE_SHARED) {
-        result.format = getMixFormat(audioClient);
-        result.negotiatedFormat = waveFormatToAudioFormat(&result.format.Format);
-        result.negotiatedSampleRate = result.format.Format.nSamplesPerSec;
-        result.negotiatedChannels = result.format.Format.nChannels;
-        result.needsConversion = (result.negotiatedFormat != config.format ||
-                                  result.negotiatedSampleRate != config.sampleRateHz ||
-                                  result.negotiatedChannels != config.channelCount);
-        return result;
     }
     
     // Failed to find compatible format
@@ -312,4 +303,3 @@ WAVEFORMATEXTENSIBLE FormatNegotiator::createInt16Format(
 
 } // namespace internal
 } // namespace wasapi
-

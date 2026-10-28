@@ -284,7 +284,7 @@ struct Device::Impl {
         negotiatedFormat_ = internal::FormatNegotiator::negotiate(
             audioClient_, config_, shareMode);
 
-        WASAPI_LOG_INFO("Format negotiated: %u Hz, %u ch, %s (conversion=%s)",
+        WASAPI_LOG_INFO("Client stream format: %u Hz, %u ch, %s (request-adjusted=%s)",
             negotiatedFormat_.negotiatedSampleRate,
             negotiatedFormat_.negotiatedChannels,
             getFormatName(negotiatedFormat_.negotiatedFormat),
@@ -327,16 +327,19 @@ struct Device::Impl {
         WASAPI_LOG_INFO("Audio client initialized: %u frames buffer (%u ms requested)",
             bufferFrames_, config_.bufferSizeMs);
 
-        // Pre-allocate conversion buffer (format conversion path)
-        if (negotiatedFormat_.needsConversion) {
+        // Callbacks use Float32 samples even when the stream uses integer PCM.
+        if (negotiatedFormat_.negotiatedFormat != AudioFormat::Float32) {
             const size_t maxSamples =
-                static_cast<size_t>(bufferFrames_) * config_.channelCount;
+                static_cast<size_t>(bufferFrames_) *
+                negotiatedFormat_.negotiatedChannels;
             conversionBuffer_.resize(maxSamples, 0.0f);
         }
 
         // Pre-allocate silence buffer (capture path, zero RT allocation)
         silenceBuffer_.assign(
-            static_cast<size_t>(bufferFrames_) * config_.channelCount, 0.0f);
+            static_cast<size_t>(bufferFrames_) *
+                negotiatedFormat_.negotiatedChannels,
+            0.0f);
 
         // -- Acquire sub-services from IAudioClient3 -------------------------
 
@@ -479,7 +482,31 @@ struct Device::Impl {
             if (FAILED(hr)) continue;
 
             if (callback_) {
-                callback_(reinterpret_cast<float*>(buffer), availableFrames);
+                const size_t sampleCount =
+                    static_cast<size_t>(availableFrames) *
+                    negotiatedFormat_.negotiatedChannels;
+                if (negotiatedFormat_.negotiatedFormat == AudioFormat::Float32) {
+                    callback_(reinterpret_cast<float*>(buffer), availableFrames);
+                } else {
+                    float* samples = conversionBuffer_.data();
+                    callback_(samples, availableFrames);
+                    switch (negotiatedFormat_.negotiatedFormat) {
+                        case AudioFormat::Int16:
+                            internal::AudioFormatConverter::float32ToInt16(
+                                samples, reinterpret_cast<int16_t*>(buffer), sampleCount);
+                            break;
+                        case AudioFormat::Int24:
+                            internal::AudioFormatConverter::float32ToInt24(
+                                samples, reinterpret_cast<int32_t*>(buffer), sampleCount);
+                            break;
+                        case AudioFormat::Int32:
+                            internal::AudioFormatConverter::float32ToInt32(
+                                samples, reinterpret_cast<int32_t*>(buffer), sampleCount);
+                            break;
+                        case AudioFormat::Float32:
+                            break;
+                    }
+                }
             }
 
             renderClient_->ReleaseBuffer(availableFrames, 0);
@@ -516,15 +543,43 @@ struct Device::Impl {
 
                 const bool isSilent =
                     (flags & AUDCLNT_BUFFERFLAGS_SILENT) != 0;
+                const size_t sampleCount =
+                    static_cast<size_t>(numFrames) *
+                    negotiatedFormat_.negotiatedChannels;
 
-                // Dispatch to user callback (NO allocation on RT thread)
-                if (callback_ && !isSilent) {
-                    callback_(reinterpret_cast<float*>(buffer), numFrames);
-                } else if (callback_ && isSilent) {
-                    const size_t n =
-                        static_cast<size_t>(numFrames) * config_.channelCount;
-                    std::fill_n(silenceBuffer_.data(), n, 0.0f);
-                    callback_(silenceBuffer_.data(), numFrames);
+                if (callback_) {
+                    if (isSilent) {
+                        std::fill_n(silenceBuffer_.data(), sampleCount, 0.0f);
+                        callback_(silenceBuffer_.data(), numFrames);
+                    } else if (negotiatedFormat_.negotiatedFormat ==
+                               AudioFormat::Float32) {
+                        callback_(reinterpret_cast<float*>(buffer), numFrames);
+                    } else {
+                        float* converted = conversionBuffer_.data();
+                        switch (negotiatedFormat_.negotiatedFormat) {
+                            case AudioFormat::Int16:
+                                internal::AudioFormatConverter::int16ToFloat32(
+                                    reinterpret_cast<const int16_t*>(buffer),
+                                    converted,
+                                    sampleCount);
+                                break;
+                            case AudioFormat::Int24:
+                                internal::AudioFormatConverter::int24ToFloat32(
+                                    reinterpret_cast<const int32_t*>(buffer),
+                                    converted,
+                                    sampleCount);
+                                break;
+                            case AudioFormat::Int32:
+                                internal::AudioFormatConverter::int32ToFloat32(
+                                    reinterpret_cast<const int32_t*>(buffer),
+                                    converted,
+                                    sampleCount);
+                                break;
+                            case AudioFormat::Float32:
+                                break;
+                        }
+                        callback_(converted, numFrames);
+                    }
                 }
 
                 captureClient_->ReleaseBuffer(numFrames);
@@ -666,6 +721,15 @@ uint32_t Device::latencyMs() const noexcept {
 
 DeviceInfo Device::deviceInfo() const {
     return pimpl_->deviceInfo_;
+}
+
+NegotiatedAudioFormat Device::negotiatedAudioFormat() const noexcept {
+    return {
+        pimpl_->negotiatedFormat_.negotiatedSampleRate,
+        pimpl_->negotiatedFormat_.negotiatedChannels,
+        pimpl_->negotiatedFormat_.negotiatedFormat,
+        pimpl_->negotiatedFormat_.needsConversion
+    };
 }
 
 const DeviceConfig& Device::config() const noexcept {
